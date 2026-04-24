@@ -79,7 +79,7 @@ int tcp_server() {
 int ledVal = 1
 
 
-void turnOnLED() {
+int turnOnLED() {
     const char* chipName = "/dev/gpiochip0";
     const unsigned int gpioPin = 17;
 
@@ -103,10 +103,10 @@ void turnOnLED() {
     ledVal++;
     ledVal = ledVal % 2;
 
-
-
     gpiod_line_release(line);
     gpiod_chip_close(chip);   
+    
+    return 0;
 }
 
 
