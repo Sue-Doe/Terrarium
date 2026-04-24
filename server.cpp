@@ -14,6 +14,43 @@
 constexpr int PORT = 8080;
 constexpr int BUFFER_SIZE = 1024;
 
+
+int ledVal = 0;
+
+int turnOnLED() {
+
+    const char* chipName = "/dev/gpiochip0";
+    const unsigned int gpioPin = 17;
+    gpiod_chip* chip = gpiod_chip_open(chipName);
+
+    if (chip == nullptr) {
+        std::cerr << "Failed to open GPIO\n";
+        return 1;
+    }
+
+    gpiod_line* line = gpiod_chip_get_line(chip, gpioPin);
+
+    if (line == nullptr) {
+        std::cerr << "Failed to get GPIO line\n";
+        gpiod_chip_close(chip);
+        return 1;
+    }
+
+    if (gpiod_line_request_output(line, "led-control", 0) < 0) {
+        std::cerr << "Failed to request GPIO line as output\n";
+        gpiod_chip_close(chip);
+        return 1;
+    }
+    gpiod_line_set_value(line, ledVal);
+    ledVal++;
+    ledVal = ledVal % 2;
+    gpiod_line_release(line);
+    gpiod_chip_close(chip);
+    return 0;
+}
+
+
+
 int tcp_server() {
 
     int server_fd, new_socket;
@@ -76,39 +113,7 @@ int tcp_server() {
 
 
 
-int ledVal = 0;
 
-int turnOnLED() {
-
-    const char* chipName = "/dev/gpiochip0";
-    const unsigned int gpioPin = 17;
-    gpiod_chip* chip = gpiod_chip_open(chipName);
-
-    if (chip == nullptr) {
-        std::cerr << "Failed to open GPIO\n";
-        return 1;
-    }
-
-    gpiod_line* line = gpiod_chip_get_line(chip, gpioPin);
-
-    if (line == nullptr) {
-        std::cerr << "Failed to get GPIO line\n";
-        gpiod_chip_close(chip);
-        return 1;
-    }
-
-    if (gpiod_line_request_output(line, "led-control", 0) < 0) {
-        std::cerr << "Failed to request GPIO line as output\n";
-        gpiod_chip_close(chip);
-        return 1;
-    }
-    gpiod_line_set_value(line, ledVal);
-    ledVal++;
-    ledVal = ledVal % 2;
-    gpiod_line_release(line);
-    gpiod_chip_close(chip);
-    return 0;
-}
 
 
 int main() {
