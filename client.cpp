@@ -8,62 +8,51 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-std::string getLocalipAddress() {
-    struct ifaddrs* interfaces = nullptr;
-    getifaddrs(&interfaces);
+constexpr int PORT = 8080;
+constexpr int BUFFER_SIZE = 1024;
+const char* SERVER_HOST = "192.168.0.5";
 
-    std::string ipAddress = "";
-    struct ifaddrs* iface = interfaces;
-    while (iface != nullptr ) {
-        
-        if (iface->ifa_addr == nullptr) {
-            continue;
-        }
+int sendTCPMessage(){
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char buffer[BUFFER_SIZE] = {0};
 
-        if (iface->ifa_addr->sa_family  == AF_INET) {
-            char ip[INET6_ADDRSTRLEN];
-            sockaddr_in* addr = (sockaddr_in*)iface->ifa_addr;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        std::cerr << "Socket creation error" << std::endl;
+        return -1;
+    }
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
 
-            inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
-
-            std::string defaultIP = "127.0.0.1";
-            if (ip != defaultIP) {
-                ipAddress = ip;
-            }
-            
-        }
-        iface = iface->ifa_next;
+    if (inet_pton(AF_INET, SERVER_HOST, &serv_addr.sin_addr) <= 0) {
+        std::cerr << "Invalid address / address not supported" << std::endl;
+        return -1;
     }
 
-    freeifaddrs(interfaces);
-    return ipAddress;
+    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        std::cerr << "Invalid address/Address not supported" << std::endl;
+        return -1;
+    }
+
+    const char* hello = "hello from client";
+    send(sock, hello, strlen(hello), 0);
+    std::cout << "Hello message sent" << std::endl;
+    ssize_t valread = read(sock, buffer, BUFFER_SIZE);
+    
+    if (valread > 0) {
+        buffer[valread] = '\0';
+        std::cout << "Received: " << buffer << std::endl;
+    } else if (valread == 0) {
+        std::cout << "Server closed the connection" << std::endl;
+    } else {
+        perror("read");
+    }
+
+    close(sock);
+    return 0;
+
 }
 
-
-
-
 int main() {
-    std::string hello = getLocalipAddress();
-    std::cout << hello;
-    // int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    // sockaddr_in server_address;
-    // std::memset(&server_address, 0, sizeof(server_address));
-
-    // server_address.sin_family = AF_INET;
-    // server_address.sin_port = htons(8080);
-    // inet_pton(AF_INET, "127.0.0.1", &server_address.sin_addr);
-
-    // const char* message = "Hello using UDP!";
-
-    // sendto(
-    //     sock_fd,
-    //     message,
-    //     std::strlen(message),
-    //     0,
-    //     (sockaddr*)&server_address,
-    //     sizeof(server_address)
-    // );
-
-    // close(sock_fd);
+    sendTCPMessage();
 }
