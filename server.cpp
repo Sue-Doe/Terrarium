@@ -5,12 +5,14 @@
 #include <sys/socket.h>
 #include <string>
 
+#include <iostream>
 
+#include <unistd.h>
+
+#include <gpiod.h>
 
 constexpr int PORT = 8080;
 constexpr int BUFFER_SIZE = 1024;
-
-
 
 int tcp_server() {
 
@@ -49,53 +51,65 @@ int tcp_server() {
         exit(EXIT_FAILURE);
     }
     std::cout << "Server listening on port " << PORT << std::endl;
+    while (true) {
 
-    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0 ) {
-        perror("listen");
-        exit(EXIT_FAILURE);
+        if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0 ) {
+            perror("listen");
+            exit(EXIT_FAILURE);
+        }
+    
+        ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
+        std::cout << "Received: " << buffer << std::endl;
+
+        if (std::strcomp(buffer, "penis") == 0) {
+            turnOnLED();
+        }
+        send(new_socket, buffer, valread, 0);
+        std::cout << "echo message sent" << std::endl;
+        close(new_socket);
+
     }
-
-    ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
-    std::cout << "Received: " << buffer << std::endl;
-    send(new_socket, buffer, valread, 0);
-    std::cout << "echo message sent" << std::endl;
-    close(new_socket);
     close(server_fd);
     return 0;
 }
 
-std::string getClientAddress() {
-    int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-    sockaddr_in address;
-    std::memset(&address, 0, sizeof(address));
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(8080);
 
-    bind(sock_fd, (sockaddr*)&address, sizeof(address));
+int ledVal = 1
 
-    char buffer[1024];
 
-    sockaddr_in sender_address;
-    socklen_t sender_len = sizeof(sender_address);
+void turnOnLED() {
+    const char* chipName = "/dev/gpiochip0";
+    const unsigned int gpioPin = 17;
 
-    int bytes = recvfrom(
-        sock_fd,
-        buffer,
-        sizeof(buffer) - 1,
-        0,
-        (sockaddr*)&sender_address,
-        &sender_len
-    );
+    gpio_chip* chip = gpio_chip_open(chipName);
 
-    buffer[bytes] = '\0';
 
-    close(sock_fd);
-    return buffer;
+    if (chip == nullptr) {
+        std::err << "Failed to open GPIO\n";
+        return 1;
+    }
+
+    gpio_line* line = gpiod_chip_get_line(chip, gpioPin);
+
+    if (line == nullptr) {
+        std::cerr << "Failed to get GPIO line\n";
+        gpiod_chip_close(chip);
+        return 1;
+    }
+
+    gpiod_line_set_value(line, ledVal);
+    ledVal++;
+    ledVal = ledVal % 2;
+
+
+
+    gpiod_line_release(line);
+    gpiod_chip_close(chip);   
 }
+
 
 int main() {
     tcp_server();
-}
+} 

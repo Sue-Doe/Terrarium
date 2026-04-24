@@ -10,7 +10,7 @@
 
 constexpr int PORT = 8080;
 constexpr int BUFFER_SIZE = 1024;
-const char* SERVER_HOST = "192.168.0.5";
+const char* SERVER_HOST = "192.168.0.16";
 
 int sendTCPMessage(){
     int sock = 0;
