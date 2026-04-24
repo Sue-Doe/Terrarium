@@ -61,7 +61,7 @@ int tcp_server() {
         ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
         std::cout << "Received: " << buffer << std::endl;
 
-        if (std::strcomp(buffer, "penis") == 0) {
+        if (std::strcmp(buffer, "penis") == 0) {
             turnOnLED();
         }
         send(new_socket, buffer, valread, 0);
@@ -76,22 +76,20 @@ int tcp_server() {
 
 
 
-int ledVal = 1
-
+int ledVal = 0;
 
 int turnOnLED() {
+
     const char* chipName = "/dev/gpiochip0";
     const unsigned int gpioPin = 17;
-
-    gpio_chip* chip = gpio_chip_open(chipName);
-
+    gpiod_chip* chip = gpiod_chip_open(chipName);
 
     if (chip == nullptr) {
-        std::err << "Failed to open GPIO\n";
+        std::cerr << "Failed to open GPIO\n";
         return 1;
     }
 
-    gpio_line* line = gpiod_chip_get_line(chip, gpioPin);
+    gpiod_line* line = gpiod_chip_get_line(chip, gpioPin);
 
     if (line == nullptr) {
         std::cerr << "Failed to get GPIO line\n";
@@ -99,13 +97,16 @@ int turnOnLED() {
         return 1;
     }
 
+    if (gpiod_line_request_output(line, "led-control", 0) < 0) {
+        std::cerr << "Failed to request GPIO line as output\n";
+        gpiod_chip_close(chip);
+        return 1;
+    }
     gpiod_line_set_value(line, ledVal);
     ledVal++;
     ledVal = ledVal % 2;
-
     gpiod_line_release(line);
-    gpiod_chip_close(chip);   
-    
+    gpiod_chip_close(chip);
     return 0;
 }
 
