@@ -4,7 +4,7 @@ CXXFLAGS = -Wall -Wextra -std=c++17
 all: server client
 
 server: server.cpp
-	$(CXX) $(CXXFLAGS) server.cpp -o server
+	$(CXX) $(CXXFLAGS) server.cpp -o server -lgpiod
 
 client: client.cpp
 	$(CXX) $(CXXFLAGS) client.cpp -o client
