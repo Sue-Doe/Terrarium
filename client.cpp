@@ -34,7 +34,7 @@ int sendTCPMessage(){
         return -1;
     }
 
-    const char* hello = "hello from client";
+    const char* hello = "penis";
     send(sock, hello, strlen(hello), 0);
     std::cout << "Hello message sent" << std::endl;
     ssize_t valread = read(sock, buffer, BUFFER_SIZE);

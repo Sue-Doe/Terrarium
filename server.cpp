@@ -78,7 +78,7 @@ int turnOnLED() {
     std::cout << "LED value set to: " << ledVal << std::endl;
     ledVal++;
     ledVal = ledVal % 2;
-    
+
     gpiod_line_request_release(request);
     gpiod_request_config_free(requestConfig);
     gpiod_line_config_free(lineConfig);
@@ -144,6 +144,7 @@ int tcp_server()
 
         if (std::strcmp(buffer, "penis") == 0)
         {
+            std::cout << "turning On led" << std::endl;
             turnOnLED();
         }
         send(new_socket, buffer, valread, 0);
@@ -156,5 +157,6 @@ int tcp_server()
 
 int main()
 {
+    
     tcp_server();
 }
